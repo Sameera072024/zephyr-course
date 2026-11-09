@@ -3,7 +3,20 @@
 #include <zephyr/logging/log.h>
 
 /* The devicetree node identifier for the "led0" alias. */
-#define LED_NODE DT_ALIAS(led0)
+//#define LED_NODE DT_ALIAS(led0)
+
+/* devicetree reference by node label identifier */
+//#define LED_NODE DT_NODELABEL(green_led)
+
+/* devicetree reference by node path identifier */
+// Blue led: /leds/led_2
+//#define LED_NODE DT_PATH(leds, led_2)
+
+/* devicetree reference by alias */
+//#define LED_NODE DT_ALIAS(warning_led)
+
+/* Assignment l4-task1 - to use the app.overlay alias */
+#define LED_NODE DT_ALIAS(app_led)
 
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED_NODE, gpios);
 
@@ -22,7 +35,10 @@ int main(void)
 
         led_state = !led_state;
         LOG_INF("LED state: %s", led_state ? "ON" : "OFF");
-        k_msleep(CONFIG_BLINK_SLEEP_TIME_MS);
+        //k_msleep(CONFIG_BLINK_SLEEP_TIME_MS);
+        /* Assignment l4-task1 - use kconfig app heartbeat period */
+        k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
+
     }
     return 0;
 }
