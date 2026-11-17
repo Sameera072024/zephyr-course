@@ -3,7 +3,7 @@
 #include <zephyr/logging/log.h>
 
 /* The devicetree node identifier for the "led0" alias. */
-//#define LED_NODE DT_ALIAS(led0)
+#define LED_NODE DT_ALIAS(led2)
 
 /* devicetree reference by node label identifier */
 //#define LED_NODE DT_NODELABEL(green_led)
@@ -16,15 +16,25 @@
 //#define LED_NODE DT_ALIAS(warning_led)
 
 /* Assignment l4-task1 - to use the app.overlay alias */
-#define LED_NODE DT_ALIAS(app_led)
+//#define LED_NODE DT_ALIAS(app_led)
+
+
+void hello_world(void);
 
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED_NODE, gpios);
+
+void hello_world(void)
+{
+	printk("hello world\n");
+}
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 int main(void)
 {
     bool led_state = true;
+
+    hello_world();
 
     if (!gpio_is_ready_dt(&led)) return 0;
 

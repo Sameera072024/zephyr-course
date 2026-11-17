@@ -1,0 +1,6 @@
+board:
+  name: hello_world_copy_method
+  full_name: Hello World Copy Method
+  vendor: IOMICO
+  socs:
+  - name: mcxa153
