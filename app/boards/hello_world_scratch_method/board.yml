@@ -1,0 +1,6 @@
+board:
+  name: hello_world_scratch_method
+  full_name: Hello world from scratch
+  vendor: IOMICO
+  socs:
+  - name: mcxa153
