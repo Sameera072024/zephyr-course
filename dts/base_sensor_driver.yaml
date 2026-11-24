@@ -1,0 +1,8 @@
+description: Base LED sensor driver
+compatible: "base,sensor-driver"
+include: base.yaml
+
+properties:
+  led-gpios:
+    type: phandle-array
+    required: true

@@ -1,0 +1,3 @@
+config BASE_SENSOR_DRIVER
+    bool "Base sensor Driver"
+    default y

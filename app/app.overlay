@@ -1,5 +1,25 @@
+// / {
+// 	aliases{
+// 		app-led = "/leds/led_0";
+// 	};
+// };
+
 / {
-	aliases{
-		app-led = "/leds/led_0";
+	our_driver0: our_driver0 {
+		compatible = "our,driver";
+		status = "okay";
+	};
+
+	our_driver1: our_driver1 {
+		compatible = "our,driver";
+		status = "okay";
+	};
+};
+
+/ {
+	base_sensor_driver: led-sensor {
+		compatible = "base,sensor-driver";
+		led-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

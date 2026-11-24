@@ -1,3 +1,4 @@
+#include "zephyr/drivers/sensor.h"
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -30,25 +31,51 @@ void hello_world(void)
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
+namespace  {
+    void test() {
+        const struct device* driver = DEVICE_DT_GET(DT_NODELABEL(our_driver0));
+        struct sensor_value val;
+        auto ret = sensor_channel_get(driver, SENSOR_CHAN_AMBIENT_TEMP, &val);
+        LOG_INF("Channel ret %d", ret);
+    }
+
+}
+
 int main(void)
 {
-    bool led_state = true;
+    // bool led_state = true;
 
-    hello_world();
+    // hello_world();
 
-    if (!gpio_is_ready_dt(&led)) return 0;
+    // if (!gpio_is_ready_dt(&led)) return 0;
 
-    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0) return 0;
+    // if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0) return 0;
 
-    while (1) {
-        if (gpio_pin_toggle_dt(&led) < 0) return 0;
+    // while (1) {
+    //     if (gpio_pin_toggle_dt(&led) < 0) return 0;
 
-        led_state = !led_state;
-        LOG_INF("LED state: %s", led_state ? "ON" : "OFF");
-        //k_msleep(CONFIG_BLINK_SLEEP_TIME_MS);
-        /* Assignment l4-task1 - use kconfig app heartbeat period */
+    //     led_state = !led_state;
+    //     LOG_INF("LED state: %s", led_state ? "ON" : "OFF");
+    //     //k_msleep(CONFIG_BLINK_SLEEP_TIME_MS);
+    //     /* Assignment l4-task1 - use kconfig app heartbeat period */
+    //     k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
+
+    // }
+
+    const struct device *led_sensor = DEVICE_DT_GET(DT_NODELABEL(base_sensor_driver));
+
+    if (!device_is_ready(led_sensor)) {
+		printk("Sensor device not ready\n");
+		return 0;
+	}
+
+	struct sensor_value val;
+
+    while(1){
+	    sensor_sample_fetch(led_sensor);                          /* LED turns on */
+	    sensor_channel_get(led_sensor, SENSOR_CHAN_PROX, &val);   /* read state */
+	    printk("LED state: %d\n", val.val1);                           /* Should print 1 */
         k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
-
     }
     return 0;
 }
