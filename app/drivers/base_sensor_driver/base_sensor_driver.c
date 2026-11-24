@@ -9,15 +9,15 @@
 
 LOG_MODULE_REGISTER(base_sensor_driver, LOG_LEVEL_INF);
 
-/* Get LED0 device from devicetree */
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
-/* Driver private data: stores the "sample" state, i.e., LED state */
+/* Dynamic data struct: add a custom parameter */
 struct base_sensor_data {
 	bool led_on;
+	uint32_t blink_period_ms;   /* custom parameter */
 };
 
-/* sample_fetch callback: "Fetch" a sample, actually toggles LED */
+/* ---- Standard sensor API ---- */
 static int base_sensor_sample_fetch(const struct device *dev,
 				    enum sensor_channel chan)
 {
@@ -27,15 +27,11 @@ static int base_sensor_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Toggle LED as the sample action */
 	data->led_on = !data->led_on;
 	gpio_pin_set_dt(&led, data->led_on);
-
-	LOG_INF("Sample fetched, LED %s", data->led_on ? "ON" : "OFF");
 	return 0;
 }
 
-/* channel_get callback: "Read" the channel, returns the current LED state */
 static int base_sensor_channel_get(const struct device *dev,
 				   enum sensor_channel chan,
 				   struct sensor_value *val)
@@ -45,40 +41,67 @@ static int base_sensor_channel_get(const struct device *dev,
 	if (chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
 	}
-
-	/* Encode LED state as sensor value: 1 for on, 0 for off */
 	val->val1 = data->led_on ? 1 : 0;
 	val->val2 = 0;
 	return 0;
 }
 
-/* Fill in the sensor driver API structure */
-static const struct sensor_driver_api base_sensor_api = {
-	.sample_fetch = base_sensor_sample_fetch,
-	.channel_get = base_sensor_channel_get,
+/* ---- Custom extension API ---- */
+/* Custom function: set blink period */
+static int base_sensor_set_blink_period(const struct device *dev,
+					uint32_t period_ms)
+{
+	struct base_sensor_data *data = dev->data;
+
+	data->blink_period_ms = period_ms;
+	LOG_INF("Blink period set to %u ms", period_ms);
+	return 0;
+}
+
+/* Custom API structure */
+struct base_sensor_driver_api {
+	/* Inherit standard sensor API as the first member */
+	struct sensor_driver_api sensor_api;
+	/* Custom function pointer */
+	int (*set_blink_period)(const struct device *dev, uint32_t period_ms);
 };
 
-/* Driver initialization function */
+/* Helper macro: cast device API to custom API and call */
+static inline const struct base_sensor_driver_api *
+base_sensor_get_api(const struct device *dev)
+{
+	return (const struct base_sensor_driver_api *)dev->api;
+}
+
+static inline int base_sensor_set_period(const struct device *dev, uint32_t ms)
+{
+	return base_sensor_get_api(dev)->set_blink_period(dev, ms);
+}
+
+/* Fill in custom API structure */
+static const struct base_sensor_driver_api base_sensor_api = {
+	.sensor_api = {
+		.sample_fetch = base_sensor_sample_fetch,
+		.channel_get = base_sensor_channel_get,
+	},
+	.set_blink_period = base_sensor_set_blink_period,
+};
+
 static int base_sensor_init(const struct device *dev)
 {
 	struct base_sensor_data *data = dev->data;
 
 	if (!gpio_is_ready_dt(&led)) {
-		LOG_ERR("LED GPIO device not ready");
 		return -ENODEV;
 	}
-
 	if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) < 0) {
-		LOG_ERR("Failed to configure LED pin");
 		return -EIO;
 	}
-
 	data->led_on = false;
-	LOG_INF("Base sensor driver initialized");
+	data->blink_period_ms = 1000; /* default value */
 	return 0;
 }
 
-/* Driver instance definition */
 static struct base_sensor_data base_sensor_data_0;
 
 #define BASE_SENSOR_DEFINE(inst)                                        \
@@ -90,6 +113,6 @@ static struct base_sensor_data base_sensor_data_0;
                           NULL,                                         \
                           POST_KERNEL,                                  \
                           90,                  \
-                          &base_sensor_api);
+		      &base_sensor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BASE_SENSOR_DEFINE)

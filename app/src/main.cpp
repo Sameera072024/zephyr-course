@@ -41,6 +41,19 @@ namespace  {
 
 }
 
+/* Custom API declaration */
+struct base_sensor_driver_api {
+	struct sensor_driver_api sensor_api;
+	int (*set_blink_period)(const struct device *dev, uint32_t period_ms);
+};
+
+static inline int base_sensor_set_period(const struct device *dev, uint32_t ms)
+{
+	const struct base_sensor_driver_api *api =
+		(const struct base_sensor_driver_api *)dev->api;
+	return api->set_blink_period(dev, ms);
+}
+
 int main(void)
 {
     // bool led_state = true;
@@ -69,11 +82,13 @@ int main(void)
 		return 0;
 	}
 
-	struct sensor_value val;
+    struct sensor_value val;
+
+	/* Call custom API: change blink period to 500ms */
+	base_sensor_set_period(led_sensor, 500);
 
     while(1){
 	    sensor_sample_fetch(led_sensor);                          /* LED turns on */
-	    sensor_channel_get(led_sensor, SENSOR_CHAN_PROX, &val);   /* read state */
 	    printk("LED state: %d\n", val.val1);                           /* Should print 1 */
         k_msleep(CONFIG_APP_HEARTBEAT_PERIOD_MS);
     }
